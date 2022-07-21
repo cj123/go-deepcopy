@@ -4,9 +4,12 @@ import (
 	"fmt"
 	. "reflect"
 	"testing"
+	"time"
 )
 
 func ExampleAnything() {
+	t := time.Date(2020, 03, 10, 02, 03, 10, 00, time.UTC)
+
 	tests := []interface{}{
 		`"Now cut that out!"`,
 		39,
@@ -23,6 +26,7 @@ func ExampleAnything() {
 			"Jell-O",
 			"Grape-Nuts",
 		},
+		t,
 	}
 
 	for _, expected := range tests {
@@ -37,6 +41,7 @@ func ExampleAnything() {
 	// 2.14
 	// [Phil Harris Rochester van Jones Mary Livingstone Dennis Day]
 	// [Jell-O Grape-Nuts]
+	// 2020-03-10 02:03:10 +0000 UTC
 }
 
 type Foo struct {
@@ -57,10 +62,10 @@ func ExampleMap() {
 	}
 	// Output:
 	// x["foo"] = y["foo"]: false
-	// x["foo"].Foo = y["foo"].Foo: false
+	// x["foo"].Foo = y["foo"].Foo: true
 	// x["foo"].Bar = y["foo"].Bar: true
 	// x["bar"] = y["bar"]: false
-	// x["bar"].Foo = y["bar"].Foo: false
+	// x["bar"].Foo = y["bar"].Foo: true
 	// x["bar"].Bar = y["bar"].Bar: true
 }
 
@@ -161,8 +166,8 @@ func TestTwoNils(t *testing.T) {
 		B int
 	}
 	type FooBar struct {
-		Foo *Foo
-		Bar *Bar
+		Foo  *Foo
+		Bar  *Bar
 		Foo2 *Foo
 		Bar2 *Bar
 	}
@@ -177,5 +182,4 @@ func TestTwoNils(t *testing.T) {
 	if !DeepEqual(src, dst) {
 		t.Errorf("expect %v == %v; ", src, dst)
 	}
-
 }

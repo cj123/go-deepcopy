@@ -3,6 +3,7 @@ package deepcopy
 import (
 	"fmt"
 	. "reflect"
+	"time"
 )
 
 type copier func(interface{}, map[uintptr]interface{}) (interface{}, error)
@@ -87,8 +88,9 @@ func _slice(x interface{}, ptrs map[uintptr]interface{}) (interface{}, error) {
 	}
 	// Create a new slice and, for each item in the slice, make a deep copy of it.
 	size := v.Len()
+	cap := v.Cap()
 	t := TypeOf(x)
-	dc := MakeSlice(t, size, size)
+	dc := MakeSlice(t, size, cap)
 	for i := 0; i < size; i++ {
 		item, err := _anything(v.Index(i).Interface(), ptrs)
 		if err != nil {
@@ -132,7 +134,7 @@ func _pointer(x interface{}, ptrs map[uintptr]interface{}) (interface{}, error) 
 
 	if v.IsNil() {
 		t := TypeOf(x)
-		return Zero(t).Interface(),nil
+		return Zero(t).Interface(), nil
 	}
 
 	addr := v.Pointer()
@@ -142,7 +144,7 @@ func _pointer(x interface{}, ptrs map[uintptr]interface{}) (interface{}, error) 
 	t := TypeOf(x)
 	dc := New(t.Elem())
 	ptrs[addr] = dc.Interface()
-	
+
 	item, err := _anything(v.Elem().Interface(), ptrs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy the value under the pointer %v: %v", v, err)
@@ -151,7 +153,7 @@ func _pointer(x interface{}, ptrs map[uintptr]interface{}) (interface{}, error) 
 	if iv.IsValid() {
 		dc.Elem().Set(ValueOf(item))
 	}
-	
+
 	return dc.Interface(), nil
 }
 
@@ -160,6 +162,14 @@ func _struct(x interface{}, ptrs map[uintptr]interface{}) (interface{}, error) {
 	if v.Kind() != Struct {
 		return nil, fmt.Errorf("must pass a value with kind of Struct; got %v", v.Kind())
 	}
+
+	if v.CanInterface() {
+		switch a := v.Interface().(type) {
+		case time.Time:
+			return time.Date(a.Year(), a.Month(), a.Day(), a.Hour(), a.Minute(), a.Second(), a.Nanosecond(), a.Location()), nil
+		}
+	}
+
 	t := TypeOf(x)
 	dc := New(t)
 	for i := 0; i < t.NumField(); i++ {
